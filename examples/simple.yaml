@@ -1,0 +1,29 @@
+test-basic-deploy:
+  environment: swa
+  version: 1.22
+
+  bootstrap:
+
+    hooks:
+      pre:
+         - script
+      post:
+         - script
+
+  deployer:
+    file: default.yaml
+    target: trusty-kilo
+    arguments: "-d -v -s 10"
+    hooks:
+      pre:
+        - bash: we are done with the deployer
+      post:
+         - bash: foo
+
+  juju-upgrade:
+    version: 1.25
+    hooks:
+      - pre:
+          - bash : foo
+      - post:
+          - testament: 1.25-upgrade.testament
