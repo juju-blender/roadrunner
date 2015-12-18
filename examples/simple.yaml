@@ -6,9 +6,9 @@ test-basic-deploy:
 
     hooks:
       pre:
-         - script
+         - bash: ./some_script.sh
       post:
-         - script
+         - bash: echo hello world
 
   deployer:
     file: default.yaml
@@ -16,9 +16,9 @@ test-basic-deploy:
     arguments: "-d -v -s 10"
     hooks:
       pre:
-        - bash: we are done with the deployer
+        - bash: echo we are done with the deployer
       post:
-         - bash: foo -l -a bar
+         - testament: check.testament
 
   juju-upgrade:
     version: 1.25

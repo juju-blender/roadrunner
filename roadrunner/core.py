@@ -1,6 +1,8 @@
 import exception
 import logging
 import os
+import shlex
+import subprocess
 import time
 import yaml
 
@@ -10,10 +12,11 @@ LOG = logging.getLogger('roadrunner.core')
 
 class DefinitionSet(object):
     "Set of definitions"
-    log = logging.getLogger('roadrunner.core.Definition')
+    log = logging.getLogger('roadrunner.core.DefinitionSet')
 
     def __init__(self, fpath):
 
+        self.dry_run = False
         self.definitions = []
         self.fpath = fpath
         if not os.path.isfile(fpath):
@@ -22,18 +25,24 @@ class DefinitionSet(object):
         with open(self.fpath, 'r') as f:
             self._raw_definitions = yaml.safe_load(f)
 
-        for defname, defbody in self._definitions.items():
+        for defname, defbody in self._raw_definitions.items():
             self.log.debug("Definition found: %s", defname)
             self.definitions.append(Definition(defname, defbody))
 
     def run(self):
-        pass
+        for definition in self.definitions:
+            definition.dry_run = self.dry_run
+            definition.run()
 
 
 class Definition(object):
+    log = logging.getLogger('roadrunner.core.Definition')
+
     def __init__(self, name, body):
         self.name = name
         self.body = body
+        self.dry_run = False
+        self.environment = self.body['environment']
 
     def run(self):
         self.do_bootstrap()
@@ -49,7 +58,8 @@ class Definition(object):
 
     def do_bootstrap_actual(self, timeout=None):
 
-        p = Process(['juju', 'bootstrap', '-e', self.environment])
+        p = Process(['juju', 'bootstrap', '-e', self.environment],
+                    dry_run=self.dry_run)
         p.monitor()
 
         assert p.returncode == 0
@@ -63,24 +73,24 @@ class Definition(object):
     def do_deployer_actual(self):
         cmd = ['juju', 'deployer', '-c', self.body['deployer']['file']]
         cmd += shlex.split(self.body['deployer']['arguments'])
-        p = Process(cmd)
+        p = Process(cmd, dry_run=self.dry_run)
         p.monitor()
 
         assert p.returncode == 0
 
     def add_juju_repo(self, version):
         p = Process(['sudo', 'add-apt-repository', '-y',
-                     'ppa:freyes/juju-%s' % version])
-        p.wait()
+                     'ppa:freyes/juju-%s' % version], dry_run=self.dry_run)
+        p.monitor()
 
-        p = Process(['sudo', 'apt-get', 'update'])
-        p.wait()
+        p = Process(['sudo', 'apt-get', 'update'], dry_run=self.dry_run)
+        p.monitor()
         assert p.returncode == 0
 
-    def install_juju(self):
+    def install_juju(self, version):
         p = Process(['sudo', 'apt-get', 'install', '-y',
-                     'juju-core=%s' % version])
-        p.wait()
+                     'juju-core=%s' % version], dry_run=self.dry_run)
+        p.monitor()
 
         assert p.returncode == 0
 
@@ -90,9 +100,10 @@ class Definition(object):
                 # example cmd -> {'bash': 'echo foobar'}
                 #                {'testament': 'swa.testament'}
                 if "bash" in cmd:
-                    p = Process(shlex.split(cmd['bash']))
+                    p = Process(shlex.split(cmd['bash']), dry_run=self.dry_run)
                 elif 'testament' in cmd:
-                    p = TestamentProcess(cmd['testament'])
+                    p = TestamentProcess(cmd['testament'],
+                                         dry_run=self.dry_run)
                 else:
                     raise exception.HookPrefixUnknown(cmd)
 
@@ -111,10 +122,18 @@ class Process(subprocess.Popen):
     log = logging.getLogger('roadrunner.core.Process')
 
     def __init__(self, *args, **kwargs):
+
         self.log.debug('Running: %s', args[0])
-        subprocess.Popen.__init__(self, *args, **kwargs)
+        self._dry_run = kwargs.pop('dry_run', False)
+        if not self._dry_run:
+            subprocess.Popen.__init__(self, *args, **kwargs)
+        else:
+            self.returncode = 0
 
     def monitor(self, timeout=None):
+        if self._dry_run:
+            return
+
         done = False
         start = time.time()
         while not done:
