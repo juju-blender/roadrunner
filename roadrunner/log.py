@@ -2,7 +2,7 @@ import logging
 import sys
 
 
-FMT = "%(asctime)s %(level)s %(message)s"
+FMT = "%(asctime)s %(levelname)s %(message)s"
 
 
 def setup_logging(level=logging.DEBUG, stream=sys.stderr):
