@@ -110,7 +110,7 @@ class Definition(object):
 
     def install_juju(self, version):
         p = Process(['sudo', 'apt-get', 'install', '-y',
-                     'juju-core=%s' % version], dry_run=self.dry_run)
+                     'juju-core=%s*' % version], dry_run=self.dry_run)
         p.monitor()
 
         assert p.returncode == 0
