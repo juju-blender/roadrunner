@@ -45,9 +45,14 @@ class Definition(object):
         self.environment = self.body['environment']
 
     def run(self):
-        self.do_bootstrap()
-        self.do_deployer()
-        self.do_juju_upgrade()
+        if 'bootstrap' in self.body:
+            self.do_bootstrap()
+
+        if 'deployer' in self.body:
+            self.do_deployer()
+
+        if 'juju-upgrade' in self.body:
+            self.do_juju_upgrade()
 
     # bootstrap
     def do_bootstrap(self):
