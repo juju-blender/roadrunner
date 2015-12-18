@@ -128,8 +128,8 @@ class Definition(object):
                 self.log.debug("Exit code: %d", p.returncode)
                 assert p.returncode == 0
         except KeyError as ex:
-            log.debug(str(ex))
-            log.info("%s hooks for %s not found", when, section)
+            self.log.debug(str(ex))
+            self.log.info("%s hooks for %s not found", when, section)
 
     def __str__(self):
         return "Definition<%s>" % self.name
