@@ -160,7 +160,7 @@ class Process(subprocess.Popen):
         start = time.time()
         while not done:
             time.sleep(1)
-            done = p.poll() is not None
+            done = self.poll() is not None
 
             if timeout and time.time() - start >= timeout:
                 raise exception.DefinitionTimeout()
