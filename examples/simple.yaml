@@ -23,7 +23,7 @@ test-basic-deploy:
   juju-upgrade:
     version: 1.25
     hooks:
-      - pre:
-          - bash : foo
-      - post:
-          - testament: 1.25-upgrade.testament
+      pre:
+        - bash : foo
+      post:
+        - testament: 1.25-upgrade.testament

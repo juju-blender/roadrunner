@@ -47,6 +47,7 @@ class Definition(object):
     def run(self):
         self.do_bootstrap()
         self.do_deployer()
+        self.do_juju_upgrade()
 
     # bootstrap
     def do_bootstrap(self):
@@ -78,6 +79,21 @@ class Definition(object):
 
         assert p.returncode == 0
 
+    # juju upgrade-juju
+    def do_juju_upgrade(self):
+        self.do_hooks('juju-upgrade', 'pre')
+        self.do_juju_upgrade_actual()
+        self.do_hooks('juju-upgrade', 'post')
+
+    def do_juju_upgrade_actual(self):
+        cmd = ['juju', 'upgrade-juju', '--version',
+               str(self.body['juju-upgrade']['version'])]
+
+        p = Process(cmd, dry_run=self.dry_run)
+        p.monitor()
+
+        assert p.returncode == 0
+
     def add_juju_repo(self, version):
         p = Process(['sudo', 'add-apt-repository', '-y',
                      'ppa:freyes/juju-%s' % version], dry_run=self.dry_run)
@@ -95,6 +111,7 @@ class Definition(object):
         assert p.returncode == 0
 
     def do_hooks(self, section, when):
+        # TODO(freyes): make this a decorator (?)
         try:
             for cmd in self.body[section]['hooks'][when]:
                 # example cmd -> {'bash': 'echo foobar'}
