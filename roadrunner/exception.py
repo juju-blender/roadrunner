@@ -8,3 +8,7 @@ class DefinitionSetNotFound(RoadrunnerError):
 
 class DefinitionTimeout(RoadrunnerError):
     pass
+
+
+class HookPrefixUnknown(RoadrunnerError):
+    pass

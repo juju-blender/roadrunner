@@ -18,7 +18,7 @@ test-basic-deploy:
       pre:
         - bash: we are done with the deployer
       post:
-         - bash: foo
+         - bash: foo -l -a bar
 
   juju-upgrade:
     version: 1.25
